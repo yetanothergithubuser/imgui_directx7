@@ -5957,11 +5957,11 @@ static bool AddResizeGrip(ImDrawList* dl, const ImVec2& corner, unsigned int rad
     if (dl->_Data->Font->ContainerAtlas->Flags & ImFontAtlasFlags_NoBakedRoundCorners) // No data in font
         return false;
 
-    if (rad < 1 || rad > (unsigned int)dl->_Data->Font->ContainerAtlas->RoundCornersMaxSize) // Radius 0 will cause issues with the UV lookup below
+    if (rad < 1 || rad > ImFontAtlasRoundCornersMaxSize) // Radius 0 will cause issues with the UV lookup below
         return false;
 
     // Calculate UVs for the three points we are interested in from the texture
-    const ImVec4& uvs = (*dl->_Data->TexUvRoundCornerFilled)[rad - 1];
+    const ImVec4& uvs = (*dl->_Data->TexRoundCornerData)[rad - 1].TexUvFilled;
     // uv[0] is the mid-point from the corner towards the centre of the circle (solid)
     // uv[1] is a solid point on the edge of the circle
     // uv[2] is the outer edge (blank, outside the circle)
@@ -7571,8 +7571,7 @@ void ImGui::SetCurrentFont(ImFont* font)
     ImFontAtlas* atlas = g.Font->ContainerAtlas;
     g.DrawListSharedData.TexUvWhitePixel = atlas->TexUvWhitePixel;
     g.DrawListSharedData.TexUvLines = atlas->TexUvLines;
-    g.DrawListSharedData.TexUvRoundCornerFilled = &atlas->TexUvRoundCornerFilled;
-    g.DrawListSharedData.TexUvRoundCornerStroked = &atlas->TexUvRoundCornerStroked;
+    g.DrawListSharedData.TexRoundCornerData = &atlas->TexRoundCornerData;
     g.DrawListSharedData.Font = g.Font;
     g.DrawListSharedData.FontSize = g.FontSize;
 }
