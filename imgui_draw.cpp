@@ -1414,26 +1414,20 @@ inline bool AddRoundCornerRect(ImDrawList* draw_list, const ImVec2& a, const ImV
 #endif
 
     const ImDrawListSharedData* data = draw_list->_Data;
-    if (data->Font->ContainerAtlas->Flags & ImFontAtlasFlags_NoBakedRoundCorners) // No data in font
-        return false;
+    IM_ASSERT_PARANOID(!(data->Font->ContainerAtlas->Flags & ImFontAtlasFlags_NoBakedRoundCorners)); // No data in font
 
     // Filled rectangles have no stroke width
     const int stroke_width = fill ? 1 : (int)thickness;
 
-    if ((stroke_width <= 0) ||
-        (stroke_width > ImFontAtlasRoundCornersMaxStrokeWidth))
+    if ((stroke_width <= 0) || (stroke_width > ImFontAtlasRoundCornersMaxStrokeWidth))
         return false; // We can't handle this
 
     // If we have a >1 stroke width, we actually need to increase the radius appropriately as well to match how the geometry renderer does things
     const int rad = (int)rounding + (stroke_width - 1);
 
-    if ((rad <= 0) || // We don't support zero radius
-        (rad > ImFontAtlasRoundCornersMaxSize))
+    // We don't support zero radius
+    if ((rad <= 0) || (rad > ImFontAtlasRoundCornersMaxSize))
         return false; // We can't handle this
-
-    // Debug command to force this render path to only execute when shift is held
-    if (!ImGui::GetIO().KeyShift)
-        return false;
 
     const unsigned int index = (stroke_width - 1) + ((rad - 1) * ImFontAtlasRoundCornersMaxStrokeWidth);
     ImFontRoundedCornerData& round_corner_data = (*data->TexRoundCornerData)[index];
@@ -1539,7 +1533,7 @@ inline bool AddRoundCornerRect(ImDrawList* draw_list, const ImVec2& a, const ImV
             ImVec2(ImLerp(corner_uv[0].x, corner_uv[b##corner ? 2 : 1].x, px), ImLerp(corner_uv[0].y, corner_uv[b##corner ? 2 : 1].y, py));  \
         draw_list->_VtxWritePtr[d].col = col
 
-    // Optimised versions of the above, for the cases where either px or py is always zero
+    // Optimized versions of the above, for the cases where either px or py is always zero
 
     #define VTX_WRITE_LERPED_X(d, corner, px)                                                                                                \
         draw_list->_VtxWritePtr[d].pos = ImVec2(ImLerp(i##corner.x, c##corner.x, px), i##corner.y);                                          \
@@ -1631,7 +1625,7 @@ inline bool AddRoundCornerRect(ImDrawList* draw_list, const ImVec2& a, const ImV
         vxd2 = dv + 7;
 
         const float width_offset_parametric = round_corner_data.ParametricStrokeWidth; // Edge width in our parametric coordinate space
-        const float parametric_offset = 1.0f - width_offset_parametric; // Offset from the centre-most edge
+        const float parametric_offset = 1.0f - width_offset_parametric; // Offset from the center-most edge
 
         VTX_WRITE_LERPED_X(vxa2, a, parametric_offset);
         VTX_WRITE_LERPED_Y(vya2, a, parametric_offset);
@@ -1884,9 +1878,7 @@ inline bool AddRoundCornerCircle(ImDrawList* draw_list, const ImVec2& center, fl
     const ImDrawListSharedData* data = draw_list->_Data;
     ImTextureID tex_id = data->Font->ContainerAtlas->TexID;
     IM_ASSERT(tex_id == draw_list->_TextureIdStack.back());  // Use high-level ImGui::PushFont() or low-level ImDrawList::PushTextureId() to change font.
-
-    if (data->Font->ContainerAtlas->Flags & ImFontAtlasFlags_NoBakedRoundCorners) // No data in font
-        return false;
+    IM_ASSERT_PARANOID(!(data->Font->ContainerAtlas->Flags & ImFontAtlasFlags_NoBakedRoundCorners)); // No data in font
 
     // Filled rectangles have no stroke width
     const int stroke_width = fill ? 1 : (int)thickness;
@@ -1898,13 +1890,9 @@ inline bool AddRoundCornerCircle(ImDrawList* draw_list, const ImVec2& center, fl
     // If we have a >1 stroke width, we actually need to increase the radius appropriately as well to match how the geometry renderer does things
     const int rad = (int)radius + (stroke_width - 1);
 
-    if ((rad <= 0) || // We don't support zero radius
-        (rad > ImFontAtlasRoundCornersMaxSize))
+    // We don't support zero radius
+    if ((rad <= 0) || (rad > ImFontAtlasRoundCornersMaxSize))
         return false; // We can't handle this
-
-    // Debug command to force this render path to only execute when shift is held
-    if (!ImGui::GetIO().KeyShift)
-        return false;
 
     const unsigned int index = (stroke_width - 1) + ((rad - 1) * ImFontAtlasRoundCornersMaxStrokeWidth);
     ImFontRoundedCornerData& round_corner_data = (*data->TexRoundCornerData)[index];
@@ -3809,9 +3797,7 @@ void ImFontAtlasBuildInit(ImFontAtlas* atlas)
 }
 
 const int          FONT_ATLAS_ROUNDED_CORNER_TEX_PADDING = 2;
-// Padding applied to the Y axis to separate the two halves of the image
-// This must be a multiple of two
-const int          FONT_ATLAS_ROUNDED_CORNER_TEX_CENTER_PADDING = 4;
+const int          FONT_ATLAS_ROUNDED_CORNER_TEX_CENTER_PADDING = 4;    // Padding applied to the Y axis to separate the two halves of the image (this must be a multiple of two)
 
 // Register the rectangles we need for the rounded corner images
 static void ImFontAtlasBuildRegisterRoundCornersCustomRects(ImFontAtlas* atlas)
@@ -3830,16 +3816,13 @@ static void ImFontAtlasBuildRegisterRoundCornersCustomRects(ImFontAtlas* atlas)
     for (unsigned int radius_index = 0; radius_index < max_radius; radius_index++)
     {
         int spare_rect_id = -1; // The last rectangle ID we generated with a spare half
-
         for (unsigned int stroke_width_index = 0; stroke_width_index < max_thickness; stroke_width_index++)
         {
             //const unsigned int index = stroke_width_index + (radius_index * ImFontAtlasRoundCornersMaxStrokeWidth);
-
             const int width = radius_index + 1 + pad * 2;
             const int height = radius_index + 1 + FONT_ATLAS_ROUNDED_CORNER_TEX_CENTER_PADDING + pad * 2;
 
             ImFontRoundedCornerData corner_data;
-
             if (ImFontAtlasRoundCornersStrokeWidthMask & (1 << stroke_width_index))
             {
                 if ((stroke_width_index == 0) || (spare_rect_id < 0))
@@ -3858,9 +3841,11 @@ static void ImFontAtlasBuildRegisterRoundCornersCustomRects(ImFontAtlas* atlas)
                 }
             }
             else
+            {
                 corner_data.RectId = -1; // Set RectId to -1 if we don't want any data
+            }
 
-            IM_ASSERT_PARANOID(atlas->TexRoundCornerData.size() == (int)index);
+            IM_ASSERT_PARANOID(atlas->TexRoundCornerData.Size == (int)index);
             atlas->TexRoundCornerData.push_back(corner_data);
         }
     }
@@ -3888,7 +3873,6 @@ static void ImFontAtlasBuildRenderRoundCornersTexData(ImFontAtlas* atlas)
         for (unsigned int stroke_width_index = 0; stroke_width_index < max_thickness; stroke_width_index++)
         {
             const unsigned int index = stroke_width_index + (radius_index * ImFontAtlasRoundCornersMaxStrokeWidth);
-
             const unsigned int radius = radius_index + 1;
             const float stroke_width = (float)stroke_width_index + 1;
 
@@ -3972,7 +3956,9 @@ static void ImFontAtlasBuildRenderRoundCornersTexData(ImFontAtlas* atlas)
                             }
                         }
                         else
+                        {
                             alpha = ImClamp(-dist, 0.0f, 1.0f); // Filled version
+                        }
                     }
                     else
                     {
@@ -4007,7 +3993,9 @@ static void ImFontAtlasBuildRenderRoundCornersTexData(ImFontAtlas* atlas)
                         data.TexUvFilled = ImVec4(uv0.x, uv0.y, uv1.x, uv1.y);
                 }
                 else
+                {
                     data.TexUvStroked = ImVec4(uv0.x, uv0.y, uv1.x, uv1.y);
+                }
             }
         }
 }
