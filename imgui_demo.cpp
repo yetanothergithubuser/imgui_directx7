@@ -9656,6 +9656,7 @@ struct ExampleAssetsBrowser
 {
     // Options
     bool            ShowTypeOverlay = true;
+    bool            AllowSorting = true;
     bool            AllowDragUnselected = false;
     bool            AllowBoxSelect = true;
     float           IconSize = 32.0f;
@@ -9758,6 +9759,7 @@ struct ExampleAssetsBrowser
 
                 ImGui::SeparatorText("Contents");
                 ImGui::Checkbox("Show Type Overlay", &ShowTypeOverlay);
+                ImGui::Checkbox("Allow Sorting", &AllowSorting);
 
                 ImGui::SeparatorText("Selection Behavior");
                 ImGui::Checkbox("Allow dragging unselected item", &AllowDragUnselected);
@@ -9776,22 +9778,25 @@ struct ExampleAssetsBrowser
         }
 
         // Show a table with ONLY one header row to showcase the idea/possibility of using this to provide a sorting UI
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-        ImGuiTableFlags table_flags_for_sort_specs = ImGuiTableFlags_Sortable | ImGuiTableFlags_SortMulti | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Borders;
-        if (ImGui::BeginTable("for_sort_specs_only", 2, table_flags_for_sort_specs, ImVec2(0.0f, ImGui::GetFrameHeight())))
+        if (AllowSorting)
         {
-            ImGui::TableSetupColumn("Index");
-            ImGui::TableSetupColumn("Type");
-            ImGui::TableHeadersRow();
-            if (ImGuiTableSortSpecs* sort_specs = ImGui::TableGetSortSpecs())
-                if (sort_specs->SpecsDirty || RequestSort)
-                {
-                    ExampleAsset::SortWithSortSpecs(sort_specs, Items.Data, Items.Size);
-                    sort_specs->SpecsDirty = RequestSort = false;
-                }
-            ImGui::EndTable();
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+            ImGuiTableFlags table_flags_for_sort_specs = ImGuiTableFlags_Sortable | ImGuiTableFlags_SortMulti | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Borders;
+            if (ImGui::BeginTable("for_sort_specs_only", 2, table_flags_for_sort_specs, ImVec2(0.0f, ImGui::GetFrameHeight())))
+            {
+                ImGui::TableSetupColumn("Index");
+                ImGui::TableSetupColumn("Type");
+                ImGui::TableHeadersRow();
+                if (ImGuiTableSortSpecs* sort_specs = ImGui::TableGetSortSpecs())
+                    if (sort_specs->SpecsDirty || RequestSort)
+                    {
+                        ExampleAsset::SortWithSortSpecs(sort_specs, Items.Data, Items.Size);
+                        sort_specs->SpecsDirty = RequestSort = false;
+                    }
+                ImGui::EndTable();
+            }
+            ImGui::PopStyleVar();
         }
-        ImGui::PopStyleVar();
 
         ImGuiIO& io = ImGui::GetIO();
         ImGui::SetNextWindowContentSize(ImVec2(0.0f, LayoutOuterPadding + LayoutLineCount * (LayoutItemSize.x + LayoutItemSpacing)));
