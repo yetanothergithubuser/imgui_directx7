@@ -7156,6 +7156,7 @@ static void BoxSelectActivateDrag(ImGuiBoxSelectState* bs, ImGuiWindow* window)
     bs->Window = window;
     bs->IsStarting = false;
     ImGui::SetActiveID(bs->ID, window);
+    ImGui::SetActiveIdUsingAllKeyboardKeys();
     if (bs->IsStartedFromVoid && (bs->KeyMods & (ImGuiMod_Ctrl | ImGuiMod_Shift)) == 0)
         bs->RequestClear = true;
 }
