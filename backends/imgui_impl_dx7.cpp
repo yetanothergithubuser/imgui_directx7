@@ -191,8 +191,8 @@ void ImGui_ImplDX7_RenderDrawData(ImDrawData* draw_data)
     // Allocate buffers
     CUSTOMVERTEX* vtx_dst;
     ImDrawIdx* idx_dst;
-    DWORD lpSize = (draw_data->TotalVtxCount * sizeof(CUSTOMVERTEX));
-    if (bd->pVB->Lock(DDLOCK_DISCARDCONTENTS, (void**)&vtx_dst, &lpSize) != D3D_OK)
+    DWORD vtx_size = (draw_data->TotalVtxCount * sizeof(CUSTOMVERTEX));
+    if (bd->pVB->Lock(DDLOCK_DISCARDCONTENTS, (void**)&vtx_dst, &vtx_size) != D3D_OK)
     {
         bd->pd3dDevice->DeleteStateBlock(d3d7_state_block);
         return;
@@ -256,18 +256,18 @@ void ImGui_ImplDX7_RenderDrawData(ImDrawData* draw_data)
 
                 // Apply plane clipping
                 D3DVALUE plane[4][4] = { 0 };
-                D3DVECTOR vec3 = { clip_min.x, 0.0f, 0.0f };
+                D3DVECTOR position = { clip_min.x, 0.0f, 0.0f };
                 D3DVECTOR normal = { 1.0f, 0.0f, 0.0f };
-                PlaneFromPointNormal(plane[0], &vec3, &normal);
-                vec3 = { clip_max.x, 0.0f, 0.0f };
+                PlaneFromPointNormal(plane[0], &position, &normal);
+                position = { clip_max.x, 0.0f, 0.0f };
                 normal = { -1.0f, 0.0f, 0.0f };
-                PlaneFromPointNormal(plane[1], &vec3, &normal);
-                vec3 = { 0.0f, clip_min.y, 0.0f };
+                PlaneFromPointNormal(plane[1], &position, &normal);
+                position = { 0.0f, clip_min.y, 0.0f };
                 normal = { 0.0f, 1.0f, 0.0f };
-                PlaneFromPointNormal(plane[2], &vec3, &normal);
-                vec3 = { 0.0f, clip_max.y, 0.0f };
+                PlaneFromPointNormal(plane[2], &position, &normal);
+                position = { 0.0f, clip_max.y, 0.0f };
                 normal = { 0.0f, -1.0f, 0.0f };
-                PlaneFromPointNormal(plane[3], &vec3, &normal);
+                PlaneFromPointNormal(plane[3], &position, &normal);
 
                 bd->pd3dDevice->SetClipPlane(0, plane[0]);
                 bd->pd3dDevice->SetClipPlane(1, plane[1]);
@@ -376,30 +376,30 @@ static bool ImGui_ImplDX7_CreateFontsTexture()
     // Upload texture to graphics system
     // Upload texture to graphics system
     bd->FontTexture = nullptr;
-    DDSURFACEDESC2 fontSurfaceDesc = { 0 };
-    fontSurfaceDesc.dwSize = sizeof(DDSURFACEDESC2);
-    fontSurfaceDesc.ddsCaps.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_ALLOCONLOAD;
-    fontSurfaceDesc.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT;
-    fontSurfaceDesc.dwWidth = (unsigned long)width;
-    fontSurfaceDesc.dwHeight = (unsigned long)height;
-    fontSurfaceDesc.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
-    fontSurfaceDesc.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
-    fontSurfaceDesc.ddpfPixelFormat.dwRGBBitCount = 32;
-    fontSurfaceDesc.ddpfPixelFormat.dwRBitMask = 0x00FF0000;
-    fontSurfaceDesc.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
-    fontSurfaceDesc.ddpfPixelFormat.dwBBitMask = 0x000000FF;
-    fontSurfaceDesc.ddpfPixelFormat.dwRGBAlphaBitMask = 0xFF000000;
-    if (bd->pDD->CreateSurface(&fontSurfaceDesc, &bd->FontTexture, NULL) != DD_OK)
+    DDSURFACEDESC2 font_surface_desc = { 0 };
+    font_surface_desc.dwSize = sizeof(DDSURFACEDESC2);
+    font_surface_desc.ddsCaps.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_ALLOCONLOAD;
+    font_surface_desc.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT;
+    font_surface_desc.dwWidth = (unsigned long)width;
+    font_surface_desc.dwHeight = (unsigned long)height;
+    font_surface_desc.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
+    font_surface_desc.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
+    font_surface_desc.ddpfPixelFormat.dwRGBBitCount = 32;
+    font_surface_desc.ddpfPixelFormat.dwRBitMask = 0x00FF0000;
+    font_surface_desc.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
+    font_surface_desc.ddpfPixelFormat.dwBBitMask = 0x000000FF;
+    font_surface_desc.ddpfPixelFormat.dwRGBAlphaBitMask = 0xFF000000;
+    if (bd->pDD->CreateSurface(&font_surface_desc, &bd->FontTexture, NULL) != DD_OK)
     {
         return false;
     }
-    if (bd->FontTexture->Lock(NULL, &fontSurfaceDesc, DDLOCK_WAIT, NULL) != DD_OK)
+    if (bd->FontTexture->Lock(NULL, &font_surface_desc, DDLOCK_WAIT, NULL) != DD_OK)
     {
         return false;
     }
     for (int y = 0; y < height; ++y)
     {
-        memcpy((unsigned char*)fontSurfaceDesc.lpSurface + (size_t)fontSurfaceDesc.lPitch * y, pixels + (size_t)width * bytes_per_pixel * y, (size_t)width * bytes_per_pixel);
+        memcpy((unsigned char*)font_surface_desc.lpSurface + (size_t)font_surface_desc.lPitch * y, pixels + (size_t)width * bytes_per_pixel * y, (size_t)width * bytes_per_pixel);
     }
     if (bd->FontTexture->Unlock(NULL) != DD_OK)
     {
